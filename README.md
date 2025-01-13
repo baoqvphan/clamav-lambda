@@ -17,10 +17,6 @@ This project provides an automated solution to scan files uploaded to an S3 buck
 - [Setup and Configuration](#setup-and-configuration)
 - [Services Overview](#services-overview)
 - [How It Works](#how-it-works)
-- [Deployment](#deployment)
-- [Local Development](#local-development)
-- [Troubleshooting](#troubleshooting)
-- [License](#license)
 
 ---
 
