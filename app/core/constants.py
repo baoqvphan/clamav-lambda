@@ -1,0 +1,2 @@
+CLEAN = "clean"
+INFECTED = "infected"

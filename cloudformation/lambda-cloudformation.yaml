@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to deploy Lambda function with a layer.
+
+Resources:
+  
+  # Define the Lambda Layer
+  ClamavLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: ClamavLayer
+      Description: ClamAV Layer for Lambda with dependencies
+      Content:
+        S3Bucket: your-bucket-name  # Replace with your S3 bucket where the layer ZIP file is stored
+        S3Key: layers/clamav-layer.zip  # Replace with the path to your layer ZIP file
+      CompatibleRuntimes:
+        - python3.10  # Compatible with the Python runtime used by your Lambda function
+
+  # Define the Lambda Function
+  ClamavLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: ClamavScannerFunction
+      Handler: lambda_function.lambda_handler  # Entry point of the function in the lambda_function.py
+      Role: arn:aws:iam::your-aws-account-id:role/your-lambda-execution-role  # Replace with your Lambda execution role ARN
+      Runtime: python3.10  # Runtime for your Lambda function
+      MemorySize: 512  # Increase if necessary
+      Timeout: 900  # Set to a suitable timeout for your processing (15 minutes in this case)
+      Environment:
+        Variables:
+          ENV: production  # Add environment variables if needed
+          SERVICE_NAME: clamav-service
+          AWS_REGION: us-east-1  # Set to your AWS region
+          TMP_PATH: /tmp
+          CLAMAV_LIB_PATH: /opt/clamav
+          CLAMAV_DB_PATH: /tmp/clamav-db  # Path for ClamAV database
+          # Other environment variables based on your app configuration
+          SQS_QUEUE_URL: !Ref SQSQueue  # If you're using an SQS queue, reference it
+          BUCKET_NAME: !Ref S3Bucket  # If you're using an S3 bucket, reference it
+          CLAMAV_DB_S3_BUCKET_NAME: !Ref S3Bucket  # Define the S3 bucket where the ClamAV database is stored
+          CLAMAV_DB_S3_KEY: clamav-db.tar.gz  # Define the ClamAV database S3 path
+
+      Layers:
+        - !Ref ClamavLayer  # Reference the layer defined above
+  
+  # SQS Queue definition (optional, if you're using SQS)
+  SQSQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ClamavQueue
+
+  # S3 Bucket definition (optional, if you're using S3)
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: clamav-signature-bucket
+
+Outputs:
+  ClamavLambdaFunctionArn:
+    Description: "ARN of the ClamAV Lambda function"
+    Value: !GetAtt ClamavLambdaFunction.Arn
